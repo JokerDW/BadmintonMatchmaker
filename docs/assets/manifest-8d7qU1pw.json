@@ -1,7 +1,7 @@
 {
   "name": "Badminton Matchmaker",
   "short_name": "Batcher",
-  "start_url": "./",
+  "start_url": "./BadmintonMatchmaker",
   "display": "standalone",
   "background_color": "#F5F4F1",
   "theme_color": "#565240",
