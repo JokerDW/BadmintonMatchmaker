@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/assets/icon-512.png",
+      "src": "/BadmintonMatchmaker/assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
