@@ -7,8 +7,8 @@ import { Button } from '../components/Button';
 import { AddPlayerModal } from '../components/AddPlayerModal';
 import { SettingsModal } from '../components/SettingsModal';
 import { PreparationArea } from '../components/PreparationArea';
-import { Plus, UserPlus, Trash2, AlertTriangle, AlertCircle, List, User, Settings } from 'lucide-react';
-import { getSelectionWarnings } from '../services/playerService';
+import { Plus, UserPlus, Trash2, AlertTriangle, AlertCircle, List, User, Settings, Sparkles } from 'lucide-react';
+import { getSelectionWarnings, findBestMatchup } from '../services/playerService';
 
 export const PlayerManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,6 +17,12 @@ export const PlayerManager: React.FC = () => {
   const [isPrepOpen, setIsPrepOpen] = useState(false); // Mobile Prep Drawer State
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState<'games' | 'name' | 'gender' | 'level'>('games');
+  
+  // Recommendation State
+  const [enableRecommendation, setEnableRecommendation] = useState(() => {
+      return localStorage.getItem('enableRecommendation') === 'true';
+  });
+  const [recommendedIds, setRecommendedIds] = useState<number[]>([]);
 
   // Warnings State
   const [warnings, setWarnings] = useState<{ type: 'yellow' | 'red'; message: string }[]>([]);
@@ -25,22 +31,75 @@ export const PlayerManager: React.FC = () => {
   const allPlayers = useLiveQuery(() => db.players.toArray(), []);
   const courts = useLiveQuery(() => db.courts.toArray(), []);
   const matchups = useLiveQuery(() => db.matchups.toArray(), []);
+  // We need to listen to history changes to re-trigger recommendation
+  const historyTrigger = useLiveQuery(() => db.history.count()); 
 
   // Derived IDs
-  const playersOnCourt = new Set<number>();
-  courts?.forEach(c => c.players.forEach(p => playersOnCourt.add(p.id!)));
+  const playersOnCourt = useMemo(() => {
+      const set = new Set<number>();
+      courts?.forEach(c => c.players.forEach(p => set.add(p.id!)));
+      return set;
+  }, [courts]);
   
-  const playersInPrep = new Set<number>();
-  matchups?.forEach(m => m.playerIds.forEach(id => playersInPrep.add(id)));
+  const playersInPrep = useMemo(() => {
+      const set = new Set<number>();
+      matchups?.forEach(m => m.playerIds.forEach(id => set.add(id)));
+      return set;
+  }, [matchups]);
 
-  // Sorting
-  const sortedPlayers = [...(allPlayers || [])].sort((a, b) => {
-    if (sortBy === 'games') return a.gamesPlayed - b.gamesPlayed;
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'gender') return a.gender.localeCompare(b.gender);
-    if (sortBy === 'level') return b.level - a.level; // Descending
-    return 0;
-  });
+  // Persist Recommendation Setting
+  const handleToggleRecommendation = (enabled: boolean) => {
+      setEnableRecommendation(enabled);
+      localStorage.setItem('enableRecommendation', String(enabled));
+      if (!enabled) setRecommendedIds([]);
+  };
+
+  // Recommendation Engine Effect
+  useEffect(() => {
+    const runRecommendation = async () => {
+        if (!enableRecommendation || !allPlayers) {
+            setRecommendedIds([]);
+            return;
+        }
+        
+        // Only run recommendation on available players (exclude those already in prep)
+        // Note: We INCLUDE players on court to allow queuing them for the next game
+        const available = allPlayers.filter(p => !playersInPrep.has(p.id!));
+        
+        const bestIds = await findBestMatchup(available);
+        setRecommendedIds(bestIds);
+    };
+    runRecommendation();
+  }, [enableRecommendation, allPlayers, playersInPrep, historyTrigger]); // Re-run when these change (Removed playersOnCourt dependency for filtering)
+
+  // Sorting and Grouping
+  const { recommendedPlayers, otherPlayers } = useMemo(() => {
+      if (!allPlayers) return { recommendedPlayers: [], otherPlayers: [] };
+
+      // Base Sort
+      const sorted = [...allPlayers].sort((a, b) => {
+        if (sortBy === 'games') return a.gamesPlayed - b.gamesPlayed;
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'gender') return a.gender.localeCompare(b.gender);
+        if (sortBy === 'level') return b.level - a.level; // Descending
+        return 0;
+      });
+
+      if (enableRecommendation) {
+          if (recommendedIds.length > 0) {
+              const rec = sorted.filter(p => recommendedIds.includes(p.id!));
+              const others = sorted.filter(p => !recommendedIds.includes(p.id!));
+              return { recommendedPlayers: rec, otherPlayers: others };
+          } else {
+              // Recommendation enabled but no group found (e.g. < 4 players)
+              // All players go to "other", but UI will show placeholder in recommended section
+              return { recommendedPlayers: [], otherPlayers: sorted };
+          }
+      }
+
+      return { recommendedPlayers: [], otherPlayers: sorted };
+  }, [allPlayers, sortBy, enableRecommendation, recommendedIds]);
+
 
   // Calculate stats for selected players
   const selectionStats = useMemo(() => {
@@ -105,8 +164,11 @@ export const PlayerManager: React.FC = () => {
   }
 
   const resetAllGames = async () => {
-      if (window.confirm("確定要將所有球員的場次歸零嗎？")) {
-          await db.players.toCollection().modify({ gamesPlayed: 0 });
+      if (window.confirm("確定要將所有球員的場次歸零並清除所有對戰紀錄嗎？")) {
+          await (db as any).transaction('rw', db.players, db.history, async () => {
+             await db.players.toCollection().modify({ gamesPlayed: 0 });
+             await db.history.clear();
+          });
           setIsSettingsOpen(false);
       }
   }
@@ -158,7 +220,49 @@ export const PlayerManager: React.FC = () => {
         {/* Grid */}
         <div className="flex-1 overflow-y-auto p-4 pb-32 md:pb-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {sortedPlayers.map(player => (
+            
+            {/* Recommended Section - Always show if enabled */}
+            {enableRecommendation && (
+                <>
+                   <div className="col-span-full flex items-center space-x-2 mb-1 mt-1">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span className="text-sm font-bold text-amber-600 dark:text-amber-500">推薦組合</span>
+                        <div className="h-px bg-amber-200 dark:bg-amber-800 flex-1"></div>
+                   </div>
+                   
+                   {recommendedPlayers.length > 0 ? (
+                       recommendedPlayers.map(player => (
+                          <PlayerCard 
+                            key={player.id} 
+                            player={player}
+                            isSelected={selectedIds.includes(player.id!)}
+                            isOnCourt={playersOnCourt.has(player.id!)}
+                            isInPrep={playersInPrep.has(player.id!)}
+                            isRecommended={true}
+                            onClick={() => toggleSelection(player.id!)}
+                            onEdit={() => handleEditPlayer(player)}
+                          />
+                       ))
+                   ) : (
+                       <div className="col-span-full py-8 text-center border-2 border-dashed border-brand-200 dark:border-brand-700 rounded-lg bg-brand-50/50 dark:bg-brand-900/50">
+                           <p className="text-sm text-brand-400 dark:text-brand-500 font-medium">
+                             目前無可推薦的球員組合
+                           </p>
+                           <p className="text-xs text-brand-300 dark:text-brand-600 mt-1">
+                             (所有球員皆在預備區，或總人數不足 4 人)
+                           </p>
+                       </div>
+                   )}
+
+                   <div className="col-span-full flex items-center space-x-2 mb-1 mt-4 opacity-70">
+                        <span className="text-xs font-bold text-brand-400 dark:text-brand-600">其他球員</span>
+                        <div className="h-px bg-brand-200 dark:bg-brand-700 flex-1"></div>
+                   </div>
+                </>
+            )}
+
+            {/* Other Players */}
+            {otherPlayers.map(player => (
               <PlayerCard 
                 key={player.id} 
                 player={player}
@@ -255,6 +359,8 @@ export const PlayerManager: React.FC = () => {
          isOpen={isSettingsOpen}
          onClose={() => setIsSettingsOpen(false)}
          onResetData={resetAllGames}
+         enableRecommendation={enableRecommendation}
+         onToggleRecommendation={handleToggleRecommendation}
       />
     </div>
   );

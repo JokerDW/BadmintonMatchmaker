@@ -2,11 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/BadmintonMatchmaker/assets/icon-512-WiemQAUW.png" />
-    <link rel="manifest" href="/BadmintonMatchmaker/assets/manifest-CQNZVwm1.json" />
-    <link rel="apple-touch-icon" href="/BadmintonMatchmaker/assets/icon-512-WiemQAUW.png" />
-    <meta name="theme-color" content="#565240" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/assets/manifest-8d7qU1pw.json">
+    <meta name="theme-color" content="#565240">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Matchmaker">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+
     <title>Badminton Matchmaker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -66,14 +72,14 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/BadmintonMatchmaker/assets/index-DF7xS6fo.js"></script>
+  <script type="module" crossorigin src="/assets/index-DmwCczq5.js"></script>
 </head>
   <body class="bg-brand-50 text-brand-900 dark:bg-brand-900 dark:text-brand-100 h-screen overflow-hidden">
     <div id="root" class="h-full w-full"></div>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
               console.log('SW registered: ', registration);
             })

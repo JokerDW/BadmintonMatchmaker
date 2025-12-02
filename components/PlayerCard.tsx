@@ -1,12 +1,13 @@
 import React from 'react';
 import { Player, Gender } from '../types';
-import { User, Shield, Users, Pencil } from 'lucide-react';
+import { User, Shield, Users, Pencil, Sparkles } from 'lucide-react';
 
 interface PlayerCardProps {
   player: Player;
   isSelected?: boolean;
   isOnCourt?: boolean;
   isInPrep?: boolean;
+  isRecommended?: boolean;
   onClick?: () => void;
   onEdit?: () => void;
 }
@@ -16,10 +17,11 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   isSelected, 
   isOnCourt, 
   isInPrep,
+  isRecommended,
   onClick,
   onEdit
 }) => {
-  // If in prep, don't show (per requirement 3)
+  // If in prep, don't show
   if (isInPrep) return null;
 
   const baseClasses = "relative flex flex-col p-3 rounded-lg border shadow-sm cursor-pointer transition-all duration-200 select-none group";
@@ -27,15 +29,15 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   // Default State
   let stateClasses = "bg-white border-brand-200 hover:border-brand-300 hover:shadow-md dark:bg-brand-800 dark:border-brand-700 dark:hover:border-brand-500";
   
-  // Prioritize selection style over on-court style
+  // State Priority: Selected > Recommended > OnCourt > Default
   if (isSelected) {
-    // Brand Primary (Dark) for Border in Light Mode, Accent (Light) in Dark Mode
     stateClasses = "bg-brand-50 border-brand-500 ring-2 ring-brand-500 z-10 dark:bg-brand-700 dark:border-brand-300 dark:ring-brand-300";
+  } else if (isRecommended) {
+    stateClasses = "bg-amber-50 border-amber-400 ring-2 ring-amber-400/50 shadow-amber-100 dark:bg-amber-900/20 dark:border-amber-500/50 dark:ring-amber-500/30";
   } else if (isOnCourt) {
     stateClasses = "bg-gray-100 border-gray-200 text-gray-400 dark:bg-brand-900 dark:border-brand-800 dark:text-brand-600";
   }
 
-  // Update gender colors to match the earthy tone or keep distinct? Keeping distinct but slightly muted.
   const genderColor = player.gender === Gender.MALE 
     ? 'text-sky-600 dark:text-sky-400' 
     : 'text-rose-500 dark:text-rose-400';
@@ -53,13 +55,20 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           </span>
         </div>
         
-        {/* Edit Button - Visible on hover or when selected */}
+        {/* Recommended Icon Badge */}
+        {isRecommended && !isSelected && !isOnCourt && (
+           <div className="absolute top-2 right-8 text-amber-500 animate-pulse">
+              <Sparkles className="w-3 h-3" />
+           </div>
+        )}
+
+        {/* Edit Button - Always visible now */}
         <button 
           onClick={(e) => {
             e.stopPropagation();
             onEdit && onEdit();
           }}
-          className={`absolute top-2 right-2 p-1 rounded-full transition-opacity opacity-0 group-hover:opacity-100 hover:bg-brand-200 dark:hover:bg-brand-600 ${isSelected ? 'opacity-100 text-brand-700 dark:text-brand-200' : 'text-brand-400 dark:text-brand-500'}`}
+          className={`absolute top-2 right-2 p-1 rounded-full transition-colors hover:bg-brand-200 dark:hover:bg-brand-600 ${isSelected ? 'text-brand-700 dark:text-brand-200' : 'text-brand-400 dark:text-brand-500'}`}
           title="編輯球員"
         >
           <Pencil className="w-3.5 h-3.5" />
