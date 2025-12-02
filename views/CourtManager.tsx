@@ -26,11 +26,12 @@ export const CourtManager: React.FC = () => {
     await db.courts.delete(id);
   };
 
-  const assignMatchToCourt = async (courtId: number) => {
-    if (!selectedMatchup) return;
+  const assignMatchToCourt = async (courtId: number, specificMatchup?: Matchup) => {
+    const matchupToAssign = specificMatchup || selectedMatchup;
+    if (!matchupToAssign) return;
 
     // 1. Get players
-    const players = await db.players.where('id').anyOf(selectedMatchup.playerIds).toArray();
+    const players = await db.players.where('id').anyOf(matchupToAssign.playerIds).toArray();
     
     // 2. Transaction
     await (db as any).transaction('rw', db.courts, db.matchups, db.players, db.history, async () => {
@@ -38,7 +39,7 @@ export const CourtManager: React.FC = () => {
       await db.courts.update(courtId, { players: players });
       
       // Remove from prep
-      await db.matchups.delete(selectedMatchup.id!);
+      await db.matchups.delete(matchupToAssign.id!);
 
       // Update games played count for players
       for (const p of players) {
@@ -46,7 +47,9 @@ export const CourtManager: React.FC = () => {
       }
     });
 
-    setSelectedMatchup(null);
+    if (matchupToAssign.id === selectedMatchup?.id) {
+        setSelectedMatchup(null);
+    }
   };
 
   const endGame = async (courtId: number, currentPlayers: Player[]) => {
@@ -62,6 +65,19 @@ export const CourtManager: React.FC = () => {
       // Clear court
       await db.courts.update(courtId, { players: [] });
     });
+  };
+
+  const handleMatchupSelect = (matchup: Matchup) => {
+    // Check if there is an empty court
+    const emptyCourt = courts?.find(c => c.players.length === 0);
+    
+    if (emptyCourt) {
+        assignMatchToCourt(emptyCourt.id!, matchup);
+        setIsPrepOpen(false); // Close drawer if mobile
+    } else {
+        setSelectedMatchup(matchup);
+        setIsPrepOpen(false); // Close drawer on selection for better UX
+    }
   };
 
   const prepCount = matchups?.length || 0;
@@ -165,16 +181,13 @@ export const CourtManager: React.FC = () => {
       )}
 
       {/* Right: Prep Area (Drawer on Mobile, Sidebar on Desktop) */}
-      <div className={`absolute inset-y-0 right-0 z-40 w-80 bg-white dark:bg-brand-800 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 md:shadow-none md:border-l md:border-brand-200 dark:md:border-brand-700 ${isPrepOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`absolute inset-y-0 right-0 z-40 w-80 bg-white dark:bg-brand-800 transform transition-transform duration-300 md:relative md:translate-x-0 md:border-l md:border-brand-200 dark:md:border-brand-700 ${isPrepOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="h-full flex flex-col">
             <div className="md:hidden p-2 flex justify-end border-b border-brand-200 dark:border-brand-700">
                  <Button variant="ghost" size="sm" onClick={() => setIsPrepOpen(false)}>關閉</Button>
             </div>
             <PreparationArea 
-                onSelectMatchup={(m) => {
-                    setSelectedMatchup(m);
-                    setIsPrepOpen(false); // Close drawer on selection for better UX
-                }}
+                onSelectMatchup={handleMatchupSelect}
                 selectedMatchupId={selectedMatchup?.id}
             />
         </div>

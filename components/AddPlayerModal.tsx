@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { Gender } from '../types';
+import { Gender, Player } from '../types';
 import { Button } from './Button';
 import { X, Upload, Save, User } from 'lucide-react';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingPlayer?: Player | null; // Optional prop for editing
 }
 
-export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose }) => {
+export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, editingPlayer }) => {
   const [mode, setMode] = useState<'manual' | 'batch'>('manual');
   
   // Manual State
@@ -26,12 +27,25 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose 
   // Fetch existing players for partner selection
   const existingPlayers = useLiveQuery(() => db.players.orderBy('name').toArray(), []);
 
-  // Focus input when modal opens
+  // Initialize form when opening
   useEffect(() => {
-    if (isOpen && mode === 'manual') {
+    if (isOpen) {
+      if (editingPlayer) {
+        setMode('manual');
+        setManualName(editingPlayer.name);
+        setManualLevel(editingPlayer.level.toString());
+        setManualGender(editingPlayer.gender);
+        setManualPartner(editingPlayer.partner || '');
+      } else {
+        // Reset defaults for add mode
+        setManualName('');
+        setManualLevel('10');
+        setManualGender(Gender.MALE);
+        setManualPartner('');
+      }
       setTimeout(() => nameInputRef.current?.focus(), 100);
     }
-  }, [isOpen, mode]);
+  }, [isOpen, editingPlayer]);
 
   if (!isOpen) return null;
 
@@ -39,22 +53,31 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!manualName) return;
 
-    await db.players.add({
+    const playerData = {
       name: manualName,
       level: parseInt(manualLevel) || 10,
       gender: manualGender,
       partner: manualPartner || undefined,
-      gamesPlayed: 0
-    });
-    
-    // Reset form fields
-    setManualName('');
-    setManualLevel('10');
-    setManualPartner('');
-    setManualGender(Gender.MALE);
-    
-    // Keep modal open and focus back on name input
-    nameInputRef.current?.focus();
+    };
+
+    if (editingPlayer && editingPlayer.id) {
+        // Update
+        await db.players.update(editingPlayer.id, playerData);
+        onClose(); // Close modal after edit
+    } else {
+        // Create
+        await db.players.add({
+            ...playerData,
+            gamesPlayed: 0
+        });
+        
+        // Reset form fields but keep modal open for rapid entry
+        setManualName('');
+        setManualLevel('10');
+        setManualPartner('');
+        setManualGender(Gender.MALE);
+        nameInputRef.current?.focus();
+    }
   };
 
   const handleBatchSubmit = async () => {
@@ -103,12 +126,15 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose 
 
   const inputClass = "w-full rounded-md border-brand-300 dark:border-brand-600 bg-white dark:bg-brand-900 text-brand-900 dark:text-brand-100 border px-3 py-2 text-sm focus:ring-brand-500 focus:border-brand-500 dark:focus:ring-brand-300 dark:focus:border-brand-300";
   const labelClass = "block text-sm font-medium text-brand-700 dark:text-brand-300 mb-1";
+  const isEditing = !!editingPlayer;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="bg-white dark:bg-brand-800 rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-brand-200 dark:border-brand-700">
         <div className="flex justify-between items-center p-4 border-b border-brand-200 dark:border-brand-700">
-          <h2 className="text-xl font-bold text-brand-800 dark:text-brand-100">新增球員</h2>
+          <h2 className="text-xl font-bold text-brand-800 dark:text-brand-100">
+            {isEditing ? '編輯球員' : '新增球員'}
+          </h2>
           <button onClick={onClose} className="text-brand-500 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-200">
             <X className="w-6 h-6" />
           </button>
@@ -125,16 +151,18 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose 
           >
             手動輸入
           </button>
-          <button 
-            className={`flex-1 py-3 font-medium text-sm transition-colors ${
-                mode === 'batch' 
-                ? 'text-brand-600 dark:text-brand-300 border-b-2 border-brand-500 dark:border-brand-300 bg-brand-50 dark:bg-brand-700/50' 
-                : 'text-brand-500 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-700'
-            }`}
-            onClick={() => setMode('batch')}
-          >
-            批次匯入
-          </button>
+          {!isEditing && (
+            <button 
+                className={`flex-1 py-3 font-medium text-sm transition-colors ${
+                    mode === 'batch' 
+                    ? 'text-brand-600 dark:text-brand-300 border-b-2 border-brand-500 dark:border-brand-300 bg-brand-50 dark:bg-brand-700/50' 
+                    : 'text-brand-500 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-700'
+                }`}
+                onClick={() => setMode('batch')}
+            >
+                批次匯入
+            </button>
+          )}
         </div>
 
         <div className="p-6 overflow-y-auto">
@@ -203,16 +231,19 @@ export const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose 
                   >
                     <option value="">-- 選擇已有球員 --</option>
                     {existingPlayers?.map(p => (
-                      <option key={p.id} value={p.name}>
-                        {p.name} (Lv.{p.level})
-                      </option>
+                        // Don't show self in partner list if editing
+                        (!isEditing || p.id !== editingPlayer?.id) && (
+                            <option key={p.id} value={p.name}>
+                                {p.name} (Lv.{p.level})
+                            </option>
+                        )
                     ))}
                   </select>
                 </div>
               </div>
 
               <Button type="submit" className="w-full mt-4">
-                <Save className="w-4 h-4 mr-2" /> 儲存 (Enter)
+                <Save className="w-4 h-4 mr-2" /> {isEditing ? '更新 (Update)' : '儲存 (Enter)'}
               </Button>
             </form>
           ) : (

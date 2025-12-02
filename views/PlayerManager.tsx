@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { Player, Gender } from '../types';
 import { PlayerCard } from '../components/PlayerCard';
 import { Button } from '../components/Button';
 import { AddPlayerModal } from '../components/AddPlayerModal';
+import { SettingsModal } from '../components/SettingsModal';
 import { PreparationArea } from '../components/PreparationArea';
-import { Plus, UserPlus, Trash2, AlertTriangle, AlertCircle, List, Moon, Sun, Monitor } from 'lucide-react';
+import { Plus, UserPlus, Trash2, AlertTriangle, AlertCircle, List, User, Settings } from 'lucide-react';
 import { getSelectionWarnings } from '../services/playerService';
-import { useTheme } from '../contexts/ThemeContext';
 
 export const PlayerManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [isPrepOpen, setIsPrepOpen] = useState(false); // Mobile Prep Drawer State
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [sortBy, setSortBy] = useState<'games' | 'name' | 'gender'>('games');
-  
-  // Theme
-  const { theme, setTheme } = useTheme();
+  const [sortBy, setSortBy] = useState<'games' | 'name' | 'gender' | 'level'>('games');
 
   // Warnings State
   const [warnings, setWarnings] = useState<{ type: 'yellow' | 'red'; message: string }[]>([]);
@@ -38,8 +38,19 @@ export const PlayerManager: React.FC = () => {
     if (sortBy === 'games') return a.gamesPlayed - b.gamesPlayed;
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'gender') return a.gender.localeCompare(b.gender);
+    if (sortBy === 'level') return b.level - a.level; // Descending
     return 0;
   });
+
+  // Calculate stats for selected players
+  const selectionStats = useMemo(() => {
+    if (!allPlayers || selectedIds.length === 0) return { male: 0, female: 0 };
+    const selected = allPlayers.filter(p => selectedIds.includes(p.id!));
+    return {
+      male: selected.filter(p => p.gender === Gender.MALE).length,
+      female: selected.filter(p => p.gender === Gender.FEMALE).length
+    };
+  }, [selectedIds, allPlayers]);
 
   // Calculate warnings when selection changes
   useEffect(() => {
@@ -65,6 +76,16 @@ export const PlayerManager: React.FC = () => {
     }
   };
 
+  const handleEditPlayer = (player: Player) => {
+      setEditingPlayer(player);
+      setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+      setIsModalOpen(false);
+      setEditingPlayer(null);
+  };
+
   const addToPrep = async () => {
     if (selectedIds.length !== 4) return;
     
@@ -82,13 +103,14 @@ export const PlayerManager: React.FC = () => {
           setSelectedIds([]);
       }
   }
-  
-  const cycleTheme = () => {
-      if (theme === 'system') setTheme('light');
-      else if (theme === 'light') setTheme('dark');
-      else setTheme('system');
-  }
 
+  const resetAllGames = async () => {
+      if (window.confirm("確定要將所有球員的場次歸零嗎？")) {
+          await db.players.toCollection().modify({ gamesPlayed: 0 });
+          setIsSettingsOpen(false);
+      }
+  }
+  
   const prepCount = matchups?.length || 0;
 
   return (
@@ -97,22 +119,11 @@ export const PlayerManager: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 bg-brand-50 dark:bg-brand-900 transition-colors">
         {/* Toolbar */}
         <div className="p-4 border-b border-brand-200 dark:border-brand-700 flex flex-wrap gap-2 justify-between items-center bg-white dark:bg-brand-800 z-10 shadow-sm">
-          <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar">
-            <h2 className="text-xl font-bold text-brand-800 dark:text-brand-100 hidden sm:block">球員管理</h2>
+          <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar flex-1">
+            <h2 className="text-xl font-bold text-brand-800 dark:text-brand-100 hidden sm:block mr-2">球員管理</h2>
             
-            {/* Theme Toggle Button */}
-            <button 
-              onClick={cycleTheme}
-              className="p-2 rounded-full hover:bg-brand-100 dark:hover:bg-brand-700 text-brand-600 dark:text-brand-300 transition-colors"
-              title={`Current: ${theme}`}
-            >
-                {theme === 'light' && <Sun className="w-5 h-5" />}
-                {theme === 'dark' && <Moon className="w-5 h-5" />}
-                {theme === 'system' && <Monitor className="w-5 h-5" />}
-            </button>
-
             <div className="flex bg-brand-100 dark:bg-brand-700 rounded-lg p-1 shrink-0">
-               {(['games', 'name', 'gender'] as const).map((s) => (
+               {(['games', 'name', 'gender', 'level'] as const).map((s) => (
                  <button
                    key={s}
                    onClick={() => setSortBy(s)}
@@ -122,22 +133,22 @@ export const PlayerManager: React.FC = () => {
                        : 'text-brand-500 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-200'
                    }`}
                  >
-                   {s === 'games' ? '場次' : s === 'name' ? '姓名' : '性別'}
+                   {s === 'games' ? '場次' : s === 'name' ? '姓名' : s === 'gender' ? '性別' : '程度'}
                  </button>
                ))}
             </div>
           </div>
+
           <div className="flex space-x-2 shrink-0">
              <Button variant="secondary" className="md:hidden" onClick={() => setIsPrepOpen(!isPrepOpen)}>
                  <List className="w-4 h-4" />
                  {prepCount > 0 && <span className="ml-1 bg-brand-100 dark:bg-brand-700 text-brand-600 dark:text-brand-300 text-[10px] px-1.5 rounded-full">{prepCount}</span>}
              </Button>
 
-             {selectedIds.length > 0 && (
-                 <Button variant="danger" size="sm" onClick={deleteSelectedPlayers}>
-                     <Trash2 className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">刪除</span>
-                 </Button>
-             )}
+             <Button variant="ghost" size="sm" onClick={() => setIsSettingsOpen(true)}>
+                <Settings className="w-5 h-5" />
+             </Button>
+
             <Button size="sm" onClick={() => setIsModalOpen(true)}>
               <Plus className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">新增</span>
             </Button>
@@ -155,6 +166,7 @@ export const PlayerManager: React.FC = () => {
                 isOnCourt={playersOnCourt.has(player.id!)}
                 isInPrep={playersInPrep.has(player.id!)}
                 onClick={() => toggleSelection(player.id!)}
+                onEdit={() => handleEditPlayer(player)}
               />
             ))}
           </div>
@@ -180,9 +192,31 @@ export const PlayerManager: React.FC = () => {
              )}
 
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-brand-600 dark:text-brand-300">
-                已選擇 <span className="text-brand-800 dark:text-brand-100 font-bold text-lg">{selectedIds.length}</span> / 4
+              <div className="flex flex-col">
+                  {/* Stats Count with Icons */}
+                  <div className="flex items-center space-x-3 text-sm font-medium">
+                    <div className="flex items-center text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 px-2 py-0.5 rounded-full">
+                        <User className="w-3.5 h-3.5 mr-1" />
+                        <span>{selectionStats.male}</span>
+                    </div>
+                    <div className="flex items-center text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-full">
+                        <User className="w-3.5 h-3.5 mr-1" />
+                        <span>{selectionStats.female}</span>
+                    </div>
+                  </div>
+
+                  {/* Delete Button (Contextual) */}
+                  {selectedIds.length > 0 && (
+                      <button 
+                        onClick={deleteSelectedPlayers}
+                        className="flex items-center text-xs text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-300 mt-1.5 transition-colors pl-1"
+                      >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          刪除已選
+                      </button>
+                  )}
               </div>
+
               <Button 
                 onClick={addToPrep} 
                 disabled={selectedIds.length !== 4}
@@ -202,7 +236,7 @@ export const PlayerManager: React.FC = () => {
       )}
 
       {/* Right: Prep Area (Drawer on Mobile, Sidebar on Desktop) */}
-      <div className={`absolute inset-y-0 right-0 z-40 w-80 bg-white dark:bg-brand-800 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 md:shadow-none md:border-l md:border-brand-200 dark:md:border-brand-700 ${isPrepOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`absolute inset-y-0 right-0 z-40 w-80 bg-white dark:bg-brand-800 transform transition-transform duration-300 md:relative md:translate-x-0 md:border-l md:border-brand-200 dark:md:border-brand-700 ${isPrepOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="h-full flex flex-col">
             <div className="md:hidden p-2 flex justify-end border-b border-brand-200 dark:border-brand-700">
                  <Button variant="ghost" size="sm" onClick={() => setIsPrepOpen(false)}>關閉</Button>
@@ -211,7 +245,17 @@ export const PlayerManager: React.FC = () => {
         </div>
       </div>
 
-      <AddPlayerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddPlayerModal 
+        isOpen={isModalOpen} 
+        onClose={closeModal} 
+        editingPlayer={editingPlayer}
+      />
+
+      <SettingsModal 
+         isOpen={isSettingsOpen}
+         onClose={() => setIsSettingsOpen(false)}
+         onResetData={resetAllGames}
+      />
     </div>
   );
 };
