@@ -1,0 +1,17 @@
+{
+  "name": "Badminton Matchmaker",
+  "short_name": "Batcher",
+  "start_url": "/BadmintonMatchmaker/",
+  "display": "standalone",
+  "background_color": "#F5F4F1",
+  "theme_color": "#565240",
+  "description": "Smart badminton court management and matchmaking application.",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
