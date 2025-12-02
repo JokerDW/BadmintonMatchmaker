@@ -1,9 +1,9 @@
 const CACHE_NAME = 'badminton-app-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/index.tsx',
-  '/manifest.json'
+  '/BadmintonMatchmaker',
+  '/BadmintonMatchmaker/index.html',
+  '/BadmintonMatchmaker/index.tsx',
+  '/BadmintonMatchmaker/manifest.json'
 ];
 
 // Install Event - Cache Files
