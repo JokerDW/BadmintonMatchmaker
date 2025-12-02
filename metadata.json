@@ -1,14 +1,5 @@
 {
-  "short_name": "Batcher",
   "name": "Badminton Matchmaker",
   "description": "A comprehensive badminton court and player management application with automated matchmaking queues, level tracking, and history recording.",
-  "start_url": ".",
-  "display": "standalone",
-  "icons": [
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "requestFramePermissions": []
 }
