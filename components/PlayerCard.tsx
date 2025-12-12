@@ -1,6 +1,6 @@
 import React from 'react';
 import { Player, Gender } from '../types';
-import { User, Shield, Users, Pencil, Sparkles } from 'lucide-react';
+import { User, Shield, Users, Pencil, Sparkles, Swords } from 'lucide-react';
 
 interface PlayerCardProps {
   player: Player;
@@ -35,12 +35,18 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   } else if (isRecommended) {
     stateClasses = "bg-amber-50 border-amber-400 ring-2 ring-amber-400/50 shadow-amber-100 dark:bg-amber-900/20 dark:border-amber-500/50 dark:ring-amber-500/30";
   } else if (isOnCourt) {
-    stateClasses = "bg-gray-100 border-gray-200 text-gray-400 dark:bg-brand-900 dark:border-brand-800 dark:text-brand-600";
+    // High contrast for readability, but visually distinct (slightly dimmed background)
+    stateClasses = "bg-gray-100 border-gray-300 dark:bg-black/20 dark:border-brand-800";
   }
 
   const genderColor = player.gender === Gender.MALE 
     ? 'text-sky-600 dark:text-sky-400' 
     : 'text-rose-500 dark:text-rose-400';
+
+  // For on-court players, we use a slightly muted text color but keep it readable
+  const textColor = isOnCourt && !isSelected 
+    ? 'text-gray-600 dark:text-brand-400' 
+    : 'text-brand-800 dark:text-brand-100';
 
   return (
     <div 
@@ -50,7 +56,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       <div className="flex justify-between items-start mb-2 pr-6">
         <div className="flex items-center space-x-2 overflow-hidden">
           <User className={`w-4 h-4 shrink-0 ${genderColor}`} />
-          <span className={`font-bold truncate ${isOnCourt && !isSelected ? 'text-inherit' : 'text-brand-800 dark:text-brand-100'}`} title={player.name}>
+          <span className={`font-bold truncate ${textColor}`} title={player.name}>
             {player.name}
           </span>
         </div>
@@ -59,6 +65,14 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         {isRecommended && !isSelected && !isOnCourt && (
            <div className="absolute top-2 right-8 text-amber-500 animate-pulse">
               <Sparkles className="w-3 h-3" />
+           </div>
+        )}
+
+        {/* On Court Badge */}
+        {isOnCourt && !isSelected && (
+           <div className="absolute top-2 right-8 flex items-center text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-brand-800 px-1.5 py-0.5 rounded">
+              <Swords className="w-3 h-3 mr-1" />
+              比賽中
            </div>
         )}
 
@@ -78,7 +92,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
       <div className="mb-2">
         <div className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-xs font-semibold ${
              isOnCourt && !isSelected 
-             ? 'bg-gray-200 text-gray-500 dark:bg-brand-800 dark:text-brand-600' 
+             ? 'bg-gray-200 text-gray-600 dark:bg-brand-900 dark:text-brand-500' 
              : 'bg-brand-100 text-brand-600 dark:bg-brand-900 dark:text-brand-300'
           }`}>
           <Shield className="w-3 h-3" />
@@ -86,10 +100,10 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         </div>
       </div>
       
-      <div className={`flex justify-between items-end mt-auto text-xs ${isOnCourt && !isSelected ? 'text-inherit' : 'text-brand-500 dark:text-brand-400'}`}>
+      <div className={`flex justify-between items-end mt-auto text-xs ${isOnCourt && !isSelected ? 'text-gray-500 dark:text-brand-500' : 'text-brand-500 dark:text-brand-400'}`}>
         <div className="flex flex-col">
           {player.partner && (
-             <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-500" title={`搭檔: ${player.partner}`}>
+             <div className={`flex items-center space-x-1 ${isOnCourt && !isSelected ? 'text-amber-700/70 dark:text-amber-600/70' : 'text-amber-600 dark:text-amber-500'}`} title={`搭檔: ${player.partner}`}>
                <Users className="w-3 h-3" />
                <span className="truncate max-w-[60px]">{player.partner}</span>
              </div>
@@ -97,18 +111,12 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         </div>
         <div className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
              isOnCourt && !isSelected 
-             ? 'bg-gray-200 dark:bg-brand-800' 
+             ? 'bg-gray-200 dark:bg-brand-900 text-gray-600 dark:text-brand-400' 
              : 'bg-brand-100 text-brand-700 dark:bg-brand-700 dark:text-brand-200'
         }`}>
           Games: {player.gamesPlayed}
         </div>
       </div>
-
-      {isOnCourt && !isSelected && (
-        <div className="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center rounded-lg pointer-events-none">
-          <span className="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider bg-white/80 dark:bg-black/80 px-2 py-1 rounded">In Game</span>
-        </div>
-      )}
       
       {isOnCourt && isSelected && (
         <div className="absolute -top-1 -right-1 pointer-events-none z-20">

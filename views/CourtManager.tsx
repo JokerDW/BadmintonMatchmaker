@@ -86,7 +86,7 @@ export const CourtManager: React.FC = () => {
     <div className="flex h-full overflow-hidden relative">
       {/* Main: Courts */}
       <div className="flex-1 bg-brand-50 dark:bg-brand-900 flex flex-col overflow-hidden transition-colors">
-        <div className="p-4 bg-white dark:bg-brand-800 border-b border-brand-200 dark:border-brand-700 flex justify-between items-center shadow-sm z-10">
+        <div className="p-4 bg-white dark:bg-brand-800 border-b border-brand-200 dark:border-brand-700 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h2 className="text-xl font-bold text-brand-800 dark:text-brand-100">場地管理</h2>
           <div className="flex items-center space-x-2">
             <Button variant="secondary" className="md:hidden" onClick={() => setIsPrepOpen(!isPrepOpen)}>
@@ -104,14 +104,16 @@ export const CourtManager: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Responsive Container: Vertical Scroll on Mobile, Horizontal Scroll on Desktop */}
+        <div className="flex-1 p-4 overflow-y-auto md:overflow-y-hidden md:overflow-x-auto">
+          {/* Flex Layout: Column on Mobile, Row on Desktop */}
+          <div className="flex flex-col md:flex-row md:flex-nowrap gap-4 md:gap-6 h-auto md:h-full items-stretch md:items-start pb-20 md:pb-4">
             {courts?.map(court => {
               const isEmpty = court.players.length === 0;
               return (
                 <div 
                   key={court.id} 
-                  className={`relative rounded-xl border-2 transition-all overflow-hidden flex flex-col ${
+                  className={`relative w-full md:w-[340px] shrink-0 rounded-xl border-2 transition-all overflow-hidden flex flex-col ${
                     isEmpty 
                       ? (selectedMatchup 
                           ? 'border-brand-400 bg-brand-100 dark:border-brand-400 dark:bg-brand-800 ring-4 ring-brand-200 dark:ring-brand-700 cursor-pointer hover:bg-brand-200 dark:hover:bg-brand-700' 
@@ -146,10 +148,11 @@ export const CourtManager: React.FC = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3 mb-4">
+                      // Changed from grid-cols-2 to flex-col for vertical list
+                      <div className="flex flex-col gap-2 mb-4">
                         {court.players.map(p => (
-                          <div key={p.id} className="flex items-center space-x-2 bg-brand-50 dark:bg-brand-900/50 p-2 rounded border border-brand-100 dark:border-brand-700">
-                            <User className="w-4 h-4 text-brand-400 dark:text-brand-500" />
+                          <div key={p.id} className="flex items-center space-x-3 bg-brand-50 dark:bg-brand-900/50 p-2.5 rounded border border-brand-100 dark:border-brand-700">
+                            <User className="w-4 h-4 text-brand-400 dark:text-brand-500 shrink-0" />
                             <span className="text-sm font-medium text-brand-800 dark:text-brand-200 truncate">{p.name}</span>
                           </div>
                         ))}
