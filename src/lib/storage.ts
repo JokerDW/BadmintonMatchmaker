@@ -26,7 +26,13 @@ export function isValidData(d: unknown): d is PersistedData {
 }
 
 export function normalize(d: PersistedData): PersistedData {
-  return { ...d, seq: Number(d.seq) || 0, prices: normalizePrices(d.prices) };
+  return {
+    ...d,
+    seq: Number(d.seq) || 0,
+    prices: normalizePrices(d.prices),
+    // 舊資料沒有預約編號：依建立順序補上
+    reservations: d.reservations.map((r, i) => ({ ...r, no: typeof r.no === 'number' ? r.no : i + 1 })),
+  };
 }
 
 export function loadData(): PersistedData {

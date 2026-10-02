@@ -9,7 +9,7 @@ export function Nav() {
     ['players', '球員管理', data.players.length - status.queued.size],
     ['courts', '場地管理', data.courts.length],
     ['history', '對戰紀錄', data.history.length],
-    ['reserve', '預約對戰', data.reservations.filter(r => r.status !== 'done').length],
+    ['reserve', '預約紀錄', data.reservations.filter(r => r.status === 'pending').length],
     ['fees', '收費管理', data.players.filter(p => !p.paid).length],
   ];
 

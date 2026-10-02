@@ -12,8 +12,6 @@ interface UiState {
   feeFilter: FeeFilter;
   /** 球員管理：已選取的球員 */
   sel: string[];
-  /** 預約對戰：已勾選的球員 */
-  resSel: string[];
   /** 場地管理：已選取的預備組 */
   pickedQ: string | null;
   dialog: PlayerForm | null;
@@ -22,7 +20,7 @@ interface UiState {
 
 const initialUi: UiState = {
   tab: 'players', sort: 'games', feeFilter: 'all',
-  sel: [], resSel: [], pickedQ: null, dialog: null, settingsOpen: false,
+  sel: [], pickedQ: null, dialog: null, settingsOpen: false,
 };
 
 let idCounter = 0;
@@ -57,7 +55,7 @@ function useSchedulerStore() {
     setFeeFilter: (feeFilter: FeeFilter) => patchUi({ feeFilter }),
 
     /** 點選球員；若有綁定搭檔且可選，會一併選入 */
-    toggleIn(key: 'sel' | 'resSel', id: string, canAddPartner: (id: string) => boolean) {
+    toggleIn(key: 'sel', id: string, canAddPartner: (id: string) => boolean) {
       setUi(u => {
         const sel = [...u[key]];
         if (sel.includes(id)) return { ...u, [key]: sel.filter(x => x !== id) };
@@ -71,7 +69,8 @@ function useSchedulerStore() {
       });
     },
     clearSel: () => patchUi({ sel: [] }),
-    clearResSel: () => patchUi({ resSel: [] }),
+    /** 直接把已選換成某組預約的 4 人（已在預備區的人除外） */
+    selectIds: (ids: string[]) => patchUi({ sel: ids.filter(id => !status.queued.has(id)) }),
 
     /** 四人組成一組加入預備區（resId 表示來自預約） */
     addQueue(ids: string[], resId: string | null = null) {
@@ -148,11 +147,14 @@ function useSchedulerStore() {
       setData(d => ({ ...d, courts: d.courts.filter(x => x.id !== cid || x.match) }));
     },
 
-    createReservation() {
-      if (ui.resSel.length !== 4) return;
-      const ids = ui.resSel;
-      setData(d => ({ ...d, seq: d.seq + 1, reservations: [...d.reservations, { id: uid('r'), ids, status: 'pending' }] }));
-      patchUi({ resSel: [] });
+    /** 把已選的 4 人存成預約 */
+    createReservation(ids: string[]) {
+      if (ids.length !== 4) return;
+      setData(d => {
+        const no = d.reservations.reduce((m, r) => Math.max(m, r.no || 0), 0) + 1;
+        return { ...d, seq: d.seq + 1, reservations: [...d.reservations, { id: uid('r'), no, ids: [...ids], status: 'pending' }] };
+      });
+      patchUi({ sel: [] });
     },
 
     deleteReservation(rid: string) {
@@ -232,7 +234,7 @@ function useSchedulerStore() {
           courts: d.courts.map(c => ({ ...c, match: null })),
         };
       });
-      patchUi({ sel: [], resSel: [], pickedQ: null });
+      patchUi({ sel: [], pickedQ: null });
     },
 
     /** 從備份檔還原 */

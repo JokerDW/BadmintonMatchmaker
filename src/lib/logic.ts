@@ -1,4 +1,4 @@
-import type { Gender, PersistedData, Player, Prices, Teams } from '../types';
+import type { Gender, PersistedData, Player, Prices, Reservation, Teams } from '../types';
 
 export type PlayerMap = Record<string, Player>;
 
@@ -147,3 +147,15 @@ export function feeFor(p: Pick<Player, 'gender' | 'priceType'>, pr: Prices): num
   const base = p.gender === '女' ? pr.female : pr.male;
   return Math.max(0, base - (p.priceType === 'discount' ? pr.discountOff : 0));
 }
+
+/** 兩組 id 是否為同樣的 4 人（不管順序） */
+export const sameGroup = (a: string[], b: string[]) => a.length === b.length && a.every(id => b.includes(id));
+
+/** 每位球員所在的「待安排」預約 */
+export function pendingResByPlayer(reservations: Reservation[]): Record<string, Reservation[]> {
+  const m: Record<string, Reservation[]> = {};
+  reservations.filter(r => r.status === 'pending').forEach(r => r.ids.forEach(id => (m[id] ||= []).push(r)));
+  return m;
+}
+
+export const resLabel = (r: Pick<Reservation, 'no'>) => '預約 ' + String(r.no).padStart(2, '0');

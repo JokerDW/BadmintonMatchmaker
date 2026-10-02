@@ -48,6 +48,8 @@ export type ReservationStatus = 'pending' | 'queued' | 'playing' | 'done';
 
 export interface Reservation {
   id: string;
+  /** 固定的預約編號（刪除其他預約也不會變），顯示為「預約 02」 */
+  no: number;
   ids: string[];
   status: ReservationStatus;
 }
