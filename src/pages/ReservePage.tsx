@@ -25,8 +25,8 @@ export function ReservePage() {
     .sort((x, y) => ORDER[x.r.status] - ORDER[y.r.status]);
 
   return (
-    <div className="split">
-      <section style={{ flex: '1 1 480px' }}>
+    <div className="split wide-aside">
+      <section>
         <div className="section-head">
           <h2>勾選球員</h2>
           <div className="actions">
@@ -61,7 +61,7 @@ export function ReservePage() {
         </div>
       </section>
 
-      <aside style={{ flex: '1 1 380px' }}>
+      <aside>
         <div className="section-head">
           <h2>預約組合</h2>
           <span className="meta">共 {data.reservations.length} 組 · 已完成 {doneCount}</span>

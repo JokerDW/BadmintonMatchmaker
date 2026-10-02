@@ -31,7 +31,7 @@ export function PlayersPage() {
 
   return (
     <div className="split">
-      <section style={{ flex: '1 1 560px' }}>
+      <section>
         <div className="section-head">
           <div className="title-group">
             <h2>今日球員</h2>
@@ -94,7 +94,7 @@ export function PlayersPage() {
                 <div className="foot">
                   <span className="partner">
                     <LinkIcon size={12} />
-                    <span>{partner ? '綁定 ' + partner.name : '未綁定'}</span>
+                    <span title={partner ? '綁定 ' + partner.name : undefined}>{partner ? partner.name : '未綁定'}</span>
                   </span>
                   <span className="num" style={{ whiteSpace: 'nowrap' }}>
                     今日 <span className="games-num">{g(p.id)}</span> 場
@@ -106,7 +106,7 @@ export function PlayersPage() {
         </div>
       </section>
 
-      <aside style={{ flex: '1 1 340px' }}>
+      <aside>
         <div className="section-head">
           <h2>預備區</h2>
           <span className="meta">{data.queue.length} 組等待中</span>

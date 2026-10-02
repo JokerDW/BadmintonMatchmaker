@@ -13,7 +13,7 @@ export function CourtsPage() {
 
   return (
     <div className="split">
-      <section style={{ flex: '1 1 560px' }}>
+      <section>
         <div className="section-head">
           <div className="title-group">
             <h2>今日場地</h2>
@@ -91,7 +91,7 @@ export function CourtsPage() {
         </div>
       </section>
 
-      <aside style={{ flex: '1 1 340px' }}>
+      <aside>
         <div className="section-head">
           <h2>預備區</h2>
           <span className="meta">點選一組以安排上場</span>
