@@ -29,6 +29,6 @@ export function seed(): PersistedData {
       { id: 'r3', ids: ['p5', 'p6', 'p15', 'p16'], status: 'pending' },
     ],
     seq: 10,
-    prices: { normal: 250, discount: 200 },
+    prices: { male: 250, female: 250, discountOff: 50 },
   };
 }

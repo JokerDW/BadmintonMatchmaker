@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import type { FeeFilter, Player, PriceType } from '../types';
+import type { FeeFilter, Player, Prices, PriceType } from '../types';
 import { byName, money } from '../lib/format';
+import { feeFor } from '../lib/logic';
 import { Segmented } from '../components/Segmented';
 
 export function FeesPage() {
@@ -10,7 +11,8 @@ export function FeesPage() {
   const pr = data.prices;
   const players = data.players;
 
-  const price = (p: Player) => (p.priceType === 'discount' ? pr.discount : pr.normal);
+  const price = (p: Player) => feeFor(p, pr);
+  const PRICE_FIELDS: [keyof Prices, string][] = [['male', '男生費用'], ['female', '女生費用'], ['discountOff', '優惠扣']];
   const total = players.reduce((a, p) => a + price(p), 0);
   const paid = players.filter(p => p.paid);
   const got = paid.reduce((a, p) => a + price(p), 0);
@@ -23,7 +25,7 @@ export function FeesPage() {
     .filter(p => ui.feeFilter === 'all' || (ui.feeFilter === 'paid' ? p.paid : !p.paid));
 
   const stats = [
-    { label: '應收', value: money(total), sub: `一般 ${players.length - discN} 人 · 優惠 ${discN} 人`, accent: false },
+    { label: '應收', value: money(total), sub: `男 ${players.filter(p => p.gender !== '女').length} 人 · 女 ${players.filter(p => p.gender === '女').length} 人 · 優惠 ${discN} 人`, accent: false },
     { label: '已收', value: money(got), sub: `給團主 ${money(hostSum)}（${hostPs.length} 人）· 現場 ${money(got - hostSum)}（${paid.length - hostPs.length} 人）`, accent: true },
     { label: '未收', value: money(total - got), sub: `${players.length - paid.length} 人`, accent: false },
   ];
@@ -36,11 +38,11 @@ export function FeesPage() {
           <span className="meta">已收 {paid.length} / {players.length} 人</span>
         </div>
         <div className="actions" style={{ gap: 'var(--space-3)' }}>
-          {(['normal', 'discount'] as const).map(k => (
+          {PRICE_FIELDS.map(([k, label]) => (
             <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-              {k === 'normal' ? '一般價' : '優惠價'}
-              <input className="input num" type="number" min={0} step={10} value={pr[k]} style={{ width: 90 }}
-                onChange={e => actions.setPrice(k, Number(e.target.value) || 0)} />
+              {label}
+              <input className="input num" type="number" min={0} step={10} value={pr[k]} style={{ width: 84 }}
+                onChange={e => actions.setPrice(k, Math.max(0, Number(e.target.value) || 0))} />
             </label>
           ))}
         </div>
@@ -85,7 +87,7 @@ export function FeesPage() {
                   <td>{status.games[p.id] || 0}</td>
                   <td>
                     <Segmented<PriceType> name={'pt-' + p.id} value={p.priceType || 'normal'}
-                      options={[['normal', '一般'], ['discount', '優惠']]}
+                      options={[['normal', '一般'], ['discount', '優惠 −' + money(pr.discountOff)]]}
                       onChange={k => actions.setPlayerFee(p.id, { priceType: k })} />
                   </td>
                   <td style={{ textAlign: 'right' }}>{money(price(p))}</td>

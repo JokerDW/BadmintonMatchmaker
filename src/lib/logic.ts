@@ -1,4 +1,4 @@
-import type { Gender, PersistedData, Player, Teams } from '../types';
+import type { Gender, PersistedData, Player, Prices, Teams } from '../types';
 
 export type PlayerMap = Record<string, Player>;
 
@@ -81,4 +81,68 @@ export function nextCourtName(used: string[]): string {
   let i = 0;
   while (set.has(String.fromCharCode(65 + i) + ' 場')) i++;
   return String.fromCharCode(65 + i) + ' 場';
+}
+
+const pairKey = (x: string, y: string) => (x < y ? x + '|' + y : y + '|' + x);
+
+/** 每兩位球員今天「在同一場」的次數（不論同隊或對手） */
+export function pairCounts(history: Teams[]): Map<string, number> {
+  const m = new Map<string, number>();
+  history.forEach(h => {
+    const ids = [...h.a, ...h.b];
+    for (let i = 0; i < ids.length; i++)
+      for (let j = i + 1; j < ids.length; j++) {
+        const k = pairKey(ids[i], ids[j]);
+        m.set(k, (m.get(k) || 0) + 1);
+      }
+  });
+  return m;
+}
+
+export const getPairCount = (m: Map<string, number>, x: string, y: string) => m.get(pairKey(x, y)) || 0;
+
+export interface PartnerWarning {
+  id: string;
+  partnerId: string;
+  /** 指定隊友目前的狀況（在場上、在預備區），空字串代表可選但沒選 */
+  where: string;
+}
+
+export interface RepeatWarning {
+  a: string;
+  b: string;
+  count: number;
+}
+
+/** 勾選球員時的兩種警告：指定隊友沒一起選、兩人今天已同場過（綁定搭檔除外） */
+export function selectionWarnings(
+  sel: string[],
+  P: PlayerMap,
+  status: Status,
+  pairs: Map<string, number>,
+): { partner: PartnerWarning[]; repeat: RepeatWarning[] } {
+  const partner: PartnerWarning[] = [];
+  sel.forEach(id => {
+    const pid = P[id]?.partner;
+    if (!pid || !P[pid] || sel.includes(pid)) return;
+    const where = status.playing[pid] ? '在 ' + status.playing[pid] + ' 比賽中' : status.queued.has(pid) ? '已在預備區' : '';
+    partner.push({ id, partnerId: pid, where });
+  });
+
+  const repeat: RepeatWarning[] = [];
+  for (let i = 0; i < sel.length; i++)
+    for (let j = i + 1; j < sel.length; j++) {
+      // 互相綁定的搭檔本來就會一起打，不列入重複警告
+      if (P[sel[i]]?.partner === sel[j]) continue;
+      const count = getPairCount(pairs, sel[i], sel[j]);
+      if (count > 0) repeat.push({ a: sel[i], b: sel[j], count });
+    }
+  repeat.sort((x, y) => y.count - x.count);
+  return { partner, repeat };
+}
+
+/** 個人應繳金額：依性別取價，優惠再扣折抵金額（最低 0） */
+export function feeFor(p: Pick<Player, 'gender' | 'priceType'>, pr: Prices): number {
+  const base = p.gender === '女' ? pr.female : pr.male;
+  return Math.max(0, base - (p.priceType === 'discount' ? pr.discountOff : 0));
 }

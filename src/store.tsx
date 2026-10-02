@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type {
-  FeeFilter, PaidMethod, PersistedData, Player, PlayerForm, PriceType, SortKey, TabKey,
+  FeeFilter, PaidMethod, PersistedData, Player, PlayerForm, Prices, PriceType, SortKey, TabKey,
 } from './types';
 import { computeStatus, makeTeams, nextCourtName, toMap, type ImportRow, type PlayerMap, type Status } from './lib/logic';
 import { loadData, saveData } from './lib/storage';
@@ -190,7 +190,7 @@ function useSchedulerStore() {
     },
 
     // ── 收費 ──
-    setPrice: (key: 'normal' | 'discount', v: number) =>
+    setPrice: (key: keyof Prices, v: number) =>
       setData(d => ({ ...d, prices: { ...d.prices, [key]: v } })),
     setPlayerFee: (id: string, patch: { priceType?: PriceType; paid?: PaidMethod }) =>
       setData(d => ({ ...d, players: d.players.map(x => (x.id === id ? { ...x, ...patch } : x)) })),

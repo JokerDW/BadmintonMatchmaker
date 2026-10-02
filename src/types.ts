@@ -53,8 +53,12 @@ export interface Reservation {
 }
 
 export interface Prices {
-  normal: number;
-  discount: number;
+  /** 男生費用 */
+  male: number;
+  /** 女生費用 */
+  female: number;
+  /** 優惠折抵金額（從原價扣掉） */
+  discountOff: number;
 }
 
 /** 會寫入 localStorage 的資料 */

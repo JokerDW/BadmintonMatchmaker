@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { useStore } from '../store';
+import { getPairCount, pairCounts } from '../lib/logic';
+import { SelectionWarnings } from '../components/SelectionWarnings';
 import type { Player, SortKey } from '../types';
 import { byName } from '../lib/format';
 import { Segmented } from '../components/Segmented';
@@ -21,6 +24,10 @@ export function PlayersPage() {
     (a, b) => (playing[a.id] ? 1 : 0) - (playing[b.id] ? 1 : 0) || sorters[ui.sort](a, b),
   );
   const sel = ui.sel.filter(eligible);
+  const pairs = useMemo(() => pairCounts(data.history), [data.history]);
+  /** 這位球員和目前已選的人今天同場過幾次 */
+  const meetWithSel = (id: string) =>
+    sel.filter(x => x !== id && P[id]?.partner !== x).map(x => ({ x, n: getPairCount(pairs, id, x) })).filter(m => m.n > 0);
 
   return (
     <div className="split">
@@ -51,6 +58,7 @@ export function PlayersPage() {
           <button className="btn btn-primary" disabled={sel.length !== 4} onClick={() => actions.addQueue(sel)}>
             加入預備區<ArrowRightIcon />
           </button>
+          <SelectionWarnings sel={sel} />
         </div>
 
         {data.players.length === 0 && <p className="empty">還沒有球員，按「新增球員」或到設定批次匯入</p>}
@@ -60,6 +68,7 @@ export function PlayersPage() {
             const on = sel.includes(p.id);
             const busy = !!playing[p.id];
             const partner = p.partner && P[p.partner];
+            const meets = busy ? [] : meetWithSel(p.id);
             return (
               <div
                 key={p.id}
@@ -79,6 +88,9 @@ export function PlayersPage() {
                   <span className="tag tag-neutral">{p.gender}</span>
                   {busy && <span className="tag tag-outline">場上 · {playing[p.id]}</span>}
                 </div>
+                {meets.length > 0 && (
+                  <div className="meet num">已同場：{meets.map(m => `${nm(m.x)} ${m.n} 次`).join('、')}</div>
+                )}
                 <div className="foot">
                   <span className="partner">
                     <LinkIcon size={12} />

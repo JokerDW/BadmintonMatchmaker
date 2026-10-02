@@ -4,6 +4,7 @@ import { byName, pad } from '../lib/format';
 import { makeTeams } from '../lib/logic';
 import { TeamsView } from '../components/Teams';
 import { CheckIcon } from '../components/Icons';
+import { SelectionWarnings } from '../components/SelectionWarnings';
 
 const ST: Record<ReservationStatus, [string, string]> = {
   pending: ['待安排', 'tag-outline'],
@@ -34,6 +35,14 @@ export function ReservePage() {
             <button className="btn btn-primary" disabled={ui.resSel.length !== 4} onClick={actions.createReservation}>建立預約組合</button>
           </div>
         </div>
+        {ui.resSel.length > 0 && (
+          <div className="res-panel">
+            <span className="num" style={{ fontSize: 13 }}>
+              已勾選：{ui.resSel.map(nm).join('、')}
+            </span>
+            <SelectionWarnings sel={ui.resSel} />
+          </div>
+        )}
         {players.length === 0 && <p className="empty">還沒有球員</p>}
         <div className="res-grid">
           {players.map(p => {
