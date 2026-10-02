@@ -24,9 +24,9 @@ export function seed(): PersistedData {
     ],
     queue: [{ id: 'q1', a: ['p11', 'p10'], b: ['p12', 'p9'], createdAt: now - 4 * m, resId: null }],
     reservations: [
-      { id: 'r1', ids: ['p1', 'p2', 'p13', 'p14'], status: 'pending' },
-      { id: 'r2', ids: ['p1', 'p2', 'p5', 'p6'], status: 'done' },
-      { id: 'r3', ids: ['p5', 'p6', 'p15', 'p16'], status: 'pending' },
+      { id: 'r1', no: 1, ids: ['p1', 'p2', 'p13', 'p14'], status: 'pending' },
+      { id: 'r2', no: 2, ids: ['p1', 'p2', 'p5', 'p6'], status: 'done' },
+      { id: 'r3', no: 3, ids: ['p5', 'p6', 'p15', 'p16'], status: 'pending' },
     ],
     seq: 10,
     prices: { male: 250, female: 250, discountOff: 50 },

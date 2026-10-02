@@ -1,6 +1,20 @@
 /* 版面與共用小元件 */
+
+/* 分段選擇器：選中的項目加底色，比只有細框更好辨認 */
+.seg-opt:has(input:checked) {
+  background: var(--color-accent-100); color: var(--color-accent-800); font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+/* 禁止雙擊放大；並避免 iOS 點擊時的灰色閃爍 */
+html { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .app { min-height: 100vh; display: flex; flex-direction: column; }
-.app-nav { flex-wrap: wrap; padding: var(--space-3) var(--space-6); }
+/* 導覽列固定在頂端，頁面捲動時不動（對話框 z-index 10 會蓋在它上面） */
+.app-nav {
+  flex-wrap: wrap; padding: var(--space-3) var(--space-6);
+  position: sticky; top: 0; z-index: 5;
+  background: var(--color-bg);
+}
 .app-main { flex: 1; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); }
 
 .num { font-variant-numeric: tabular-nums; }
@@ -10,8 +24,16 @@
 
 .svg-icon { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-.split { display: flex; flex-wrap: wrap; gap: var(--space-8); align-items: flex-start; }
+/* 左右兩欄（主內容 + 預備區）。窄螢幕（iPad 直向、手機）上下排列，
+   寬螢幕（iPad 橫向、電腦）左右並排，右欄約佔四分之一。 */
+.split { display: flex; flex-direction: column; gap: var(--space-6); }
 .split > section, .split > aside { min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+@media (min-width: 1000px) {
+  .split {
+    display: grid; align-items: start; gap: var(--space-6);
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 25%, 340px);
+  }
+}
 
 .section-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -45,7 +67,8 @@
 .sel-bar .count { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
 .sel-bar .chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 180px; min-width: 0; }
 .sel-bar .hint { font-size: 13px; font-style: italic; color: var(--color-neutral-700); }
-.player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); }
+.player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); }
+.player-card { padding: var(--space-3) calc(var(--space-3) * 0.85); }
 .player-card .foot {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
   padding-top: var(--space-2); border-top: 1px solid var(--color-divider); font-size: 12px;
@@ -53,7 +76,10 @@
 .player-card .partner { display: flex; align-items: center; gap: 4px; color: var(--color-neutral-700); min-width: 0; }
 .player-card .partner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-card .games-num { font-family: var(--font-heading); font-size: 18px; font-weight: var(--font-heading-weight); }
-.player-card.busy { opacity: 0.45; cursor: default; }
+/* 正在場上：卡片偏灰，但仍可點選排入預備區 */
+.player-card.busy { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.player-card.busy > * { opacity: 0.55; }
+.player-card.busy.selected > * { opacity: 0.8; }
 .icon-btn { padding: 2px 4px; color: var(--color-neutral-600); }
 
 /* 場地 */
@@ -80,24 +106,6 @@
   font-family: var(--font-heading); font-style: italic; font-size: 18px; color: var(--color-neutral-600);
 }
 .court.droppable .free-label span { color: var(--color-accent-700); }
-
-/* 預約 */
-.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); column-gap: var(--space-6); }
-.res-row {
-  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-1);
-  border-bottom: 1px solid var(--color-divider); cursor: pointer; user-select: none;
-}
-.res-row:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
-.checkbox {
-  flex: none; width: 18px; height: 18px; border: 1px solid var(--color-neutral-500);
-  border-radius: var(--radius-sm); display: grid; place-items: center; color: var(--color-accent);
-}
-.checkbox.on { border-color: var(--color-accent); }
-.res-row .name { flex: 1; min-width: 0; font-family: var(--font-heading); font-size: 18px; font-weight: var(--font-heading-weight); }
-.card-foot {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  padding-top: var(--space-2); border-top: 1px solid var(--color-divider);
-}
 
 /* 收費 */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-4); }
@@ -131,5 +139,52 @@
 .warnings li { display: flex; align-items: flex-start; gap: 6px; }
 .warnings li .svg-icon { margin-top: 3px; color: var(--color-accent-600); }
 .warnings b { font-weight: 600; }
-.res-panel { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3); }
+.queue-note { font-size: 12px; color: var(--color-accent-700); font-style: italic; }
 .player-card .meet { font-size: 11px; color: var(--color-accent-700); }
+
+/* 預約：比一般警告更醒目（實心底色 + 左側粗線） */
+.res-alerts { display: flex; flex-direction: column; gap: var(--space-2); flex-basis: 100%; }
+.res-alert {
+  flex-basis: 100%; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  background: var(--color-accent-200); color: var(--color-accent-900);
+  border-left: 4px solid var(--color-accent-600); font-size: 14px;
+}
+.res-alert .svg-icon { color: var(--color-accent-700); }
+.res-alert .text { flex: 1 1 200px; min-width: 0; }
+.res-alert b { font-weight: 700; }
+.res-alert .btn { padding: 4px 10px; font-size: 13px; background: var(--color-bg); }
+.res-alert.match { background: var(--color-accent-100); border-left-color: var(--color-accent); color: var(--color-accent-800); }
+
+/* 卡片上的預約標籤：實心，一眼看得出來 */
+.tag-res { background: var(--color-accent); color: var(--color-bg); font-weight: 600; }
+
+/* 右欄的待安排預約 */
+.res-card { gap: var(--space-2); border-left: 3px solid var(--color-accent-400); }
+.res-card.ready { border-color: var(--color-accent); border-left-color: var(--color-accent); }
+.res-no { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 18px; font-variant-numeric: tabular-nums; }
+.res-names {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px var(--space-3);
+  font-family: var(--font-heading); font-size: 17px; font-weight: var(--font-heading-weight);
+}
+.res-card .card-foot { flex-wrap: wrap; }
+.card-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding-top: var(--space-2); border-top: 1px solid var(--color-divider);
+}
+
+/* 對戰紀錄：球員篩選 */
+.name-link {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline dotted color-mix(in srgb, var(--color-text) 30%, transparent); text-underline-offset: 3px;
+}
+.name-link:hover { color: var(--color-accent-700); }
+.name-link.me { color: var(--color-accent-700); font-weight: 700; text-decoration: none; }
+.hist-summary {
+  display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-accent); border-radius: var(--radius-md); background: var(--color-accent-100);
+}
+.hist-summary-title { display: flex; align-items: baseline; gap: var(--space-3); }
+.hist-summary-row { display: grid; grid-template-columns: 44px 1fr; align-items: baseline; gap: var(--space-2); font-size: 14px; }
+.hist-summary-row > div { display: flex; flex-wrap: wrap; gap: 4px var(--space-4); }
+.tally b { font-weight: 600; color: var(--color-accent-700); }

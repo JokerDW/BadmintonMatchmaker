@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import { useStore } from '../store';
-import { getPairCount, pairCounts } from '../lib/logic';
+import { getPairCount, pairCounts, pendingResByPlayer, resLabel, sameGroup } from '../lib/logic';
+import { ReservationAlert } from '../components/ReservationAlert';
+import { PendingReservations } from '../components/PendingReservations';
 import { SelectionWarnings } from '../components/SelectionWarnings';
 import type { Player, SortKey } from '../types';
 import { byName } from '../lib/format';
 import { Segmented } from '../components/Segmented';
 import { QueueCard } from '../components/QueueCard';
-import { ArrowRightIcon, LinkIcon, PencilIcon, PlusIcon } from '../components/Icons';
+import { ArrowRightIcon, BookmarkIcon, LinkIcon, PencilIcon, PlusIcon } from '../components/Icons';
 
 export function PlayersPage() {
   const { data, ui, P, status, nm, eligible, actions } = useStore();
@@ -28,10 +30,14 @@ export function PlayersPage() {
   /** 這位球員和目前已選的人今天同場過幾次 */
   const meetWithSel = (id: string) =>
     sel.filter(x => x !== id && P[id]?.partner !== x).map(x => ({ x, n: getPairCount(pairs, id, x) })).filter(m => m.n > 0);
+  const resByPlayer = pendingResByPlayer(data.reservations);
+  const pendingRes = data.reservations.filter(r => r.status === 'pending');
+  /** 已選 4 人剛好是某組待安排預約 */
+  const matchedRes = sel.length === 4 ? pendingRes.find(r => sameGroup(r.ids, sel)) : undefined;
 
   return (
     <div className="split">
-      <section style={{ flex: '1 1 560px' }}>
+      <section>
         <div className="section-head">
           <div className="title-group">
             <h2>今日球員</h2>
@@ -55,9 +61,15 @@ export function PlayersPage() {
             )}
           </div>
           <button className="btn btn-ghost" disabled={sel.length === 0} onClick={actions.clearSel}>清除</button>
-          <button className="btn btn-primary" disabled={sel.length !== 4} onClick={() => actions.addQueue(sel)}>
+          <button className="btn btn-secondary" disabled={sel.length !== 4 || !!matchedRes}
+            title={matchedRes ? '這 4 人已經是 ' + resLabel(matchedRes) : '把這 4 人存成預約，之後再排'}
+            onClick={() => actions.createReservation(sel)}>
+            <BookmarkIcon />存成預約
+          </button>
+          <button className="btn btn-primary" disabled={sel.length !== 4} onClick={() => actions.addQueue(sel, matchedRes?.id ?? null)}>
             加入預備區<ArrowRightIcon />
           </button>
+          <ReservationAlert sel={sel} />
           <SelectionWarnings sel={sel} />
         </div>
 
@@ -68,12 +80,12 @@ export function PlayersPage() {
             const on = sel.includes(p.id);
             const busy = !!playing[p.id];
             const partner = p.partner && P[p.partner];
-            const meets = busy ? [] : meetWithSel(p.id);
+            const meets = on ? [] : meetWithSel(p.id);
             return (
               <div
                 key={p.id}
-                className={['card', 'player-card', busy ? 'busy' : 'clickable', on && 'selected'].filter(Boolean).join(' ')}
-                onClick={() => { if (!busy) actions.toggleIn('sel', p.id, eligible); }}
+                className={['card', 'player-card', 'clickable', busy && 'busy', on && 'selected'].filter(Boolean).join(' ')}
+                onClick={() => actions.toggleIn('sel', p.id, eligible)}
                 aria-pressed={on}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -87,6 +99,7 @@ export function PlayersPage() {
                   <span className="tag tag-accent num">Lv.{p.level}</span>
                   <span className="tag tag-neutral">{p.gender}</span>
                   {busy && <span className="tag tag-outline">場上 · {playing[p.id]}</span>}
+                  {(resByPlayer[p.id] || []).map(r => <span key={r.id} className="tag tag-res num">{resLabel(r)}</span>)}
                 </div>
                 {meets.length > 0 && (
                   <div className="meet num">已同場：{meets.map(m => `${nm(m.x)} ${m.n} 次`).join('、')}</div>
@@ -94,7 +107,7 @@ export function PlayersPage() {
                 <div className="foot">
                   <span className="partner">
                     <LinkIcon size={12} />
-                    <span>{partner ? '綁定 ' + partner.name : '未綁定'}</span>
+                    <span title={partner ? '綁定 ' + partner.name : undefined}>{partner ? partner.name : '未綁定'}</span>
                   </span>
                   <span className="num" style={{ whiteSpace: 'nowrap' }}>
                     今日 <span className="games-num">{g(p.id)}</span> 場
@@ -106,7 +119,8 @@ export function PlayersPage() {
         </div>
       </section>
 
-      <aside style={{ flex: '1 1 340px' }}>
+      <aside>
+        <PendingReservations />
         <div className="section-head">
           <h2>預備區</h2>
           <span className="meta">{data.queue.length} 組等待中</span>

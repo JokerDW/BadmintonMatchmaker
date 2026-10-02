@@ -1,0 +1,43 @@
+/* 暗色主題：由 <html data-theme="dark"> 啟用（見 src/lib/theme.ts）。
+   色階與亮色反向排列，讓「淺底深字」的元件在暗色下自動變成「深底淺字」。 */
+:root { color-scheme: light; }
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #1c1b1a;
+  --color-surface: #262422;
+  --color-text: #ece8e3;
+  --color-accent: #d6a65f;
+  --color-accent-2: #cfa264;
+  --color-divider: color-mix(in srgb, #ece8e3 16%, transparent);
+
+  --color-neutral-100: #2a2827;
+  --color-neutral-200: #363432;
+  --color-neutral-300: #4a4745;
+  --color-neutral-400: #64605e;
+  --color-neutral-500: #827e7b;
+  --color-neutral-600: #a19c99;
+  --color-neutral-700: #bdb8b5;
+  --color-neutral-800: #d9d5d2;
+  --color-neutral-900: #f0ecea;
+
+  --color-accent-100: #3a2a14;
+  --color-accent-200: #533b17;
+  --color-accent-300: #6f501d;
+  --color-accent-400: #8f6927;
+  --color-accent-500: #b48536;
+  --color-accent-600: #d2a253;
+  --color-accent-700: #e6bd78;
+  --color-accent-800: #f5d7a6;
+  --color-accent-900: #fff0d9;
+
+  --color-accent-2-100: #382a17;
+  --color-accent-2-800: #f2d6ab;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 3px 10px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
+}
+
+/* 對話框遮罩在暗色下要更深，而不是用反向後變淺的 neutral-900 */
+:root[data-theme='dark'] .dialog-backdrop { background: rgb(0 0 0 / 0.6); }

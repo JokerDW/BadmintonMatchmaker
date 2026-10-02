@@ -1,4 +1,4 @@
-import type { Gender, PersistedData, Player, Prices, Teams } from '../types';
+import type { Gender, PersistedData, Player, Prices, Reservation, Teams } from '../types';
 
 export type PlayerMap = Record<string, Player>;
 
@@ -114,13 +114,13 @@ export interface RepeatWarning {
   count: number;
 }
 
-/** 勾選球員時的兩種警告：指定隊友沒一起選、兩人今天已同場過（綁定搭檔除外） */
+/** 勾選球員時的警告：指定隊友沒一起選、兩人今天已同場過（綁定搭檔除外）、有人還在場上 */
 export function selectionWarnings(
   sel: string[],
   P: PlayerMap,
   status: Status,
   pairs: Map<string, number>,
-): { partner: PartnerWarning[]; repeat: RepeatWarning[] } {
+): { partner: PartnerWarning[]; repeat: RepeatWarning[]; playing: { id: string; court: string }[] } {
   const partner: PartnerWarning[] = [];
   sel.forEach(id => {
     const pid = P[id]?.partner;
@@ -138,7 +138,8 @@ export function selectionWarnings(
       if (count > 0) repeat.push({ a: sel[i], b: sel[j], count });
     }
   repeat.sort((x, y) => y.count - x.count);
-  return { partner, repeat };
+  const playing = sel.filter(id => status.playing[id]).map(id => ({ id, court: status.playing[id] }));
+  return { partner, repeat, playing };
 }
 
 /** 個人應繳金額：依性別取價，優惠再扣折抵金額（最低 0） */
@@ -146,3 +147,15 @@ export function feeFor(p: Pick<Player, 'gender' | 'priceType'>, pr: Prices): num
   const base = p.gender === '女' ? pr.female : pr.male;
   return Math.max(0, base - (p.priceType === 'discount' ? pr.discountOff : 0));
 }
+
+/** 兩組 id 是否為同樣的 4 人（不管順序） */
+export const sameGroup = (a: string[], b: string[]) => a.length === b.length && a.every(id => b.includes(id));
+
+/** 每位球員所在的「待安排」預約 */
+export function pendingResByPlayer(reservations: Reservation[]): Record<string, Reservation[]> {
+  const m: Record<string, Reservation[]> = {};
+  reservations.filter(r => r.status === 'pending').forEach(r => r.ids.forEach(id => (m[id] ||= []).push(r)));
+  return m;
+}
+
+export const resLabel = (r: Pick<Reservation, 'no'>) => '預約 ' + String(r.no).padStart(2, '0');
