@@ -114,13 +114,13 @@ export interface RepeatWarning {
   count: number;
 }
 
-/** 勾選球員時的兩種警告：指定隊友沒一起選、兩人今天已同場過（綁定搭檔除外） */
+/** 勾選球員時的警告：指定隊友沒一起選、兩人今天已同場過（綁定搭檔除外）、有人還在場上 */
 export function selectionWarnings(
   sel: string[],
   P: PlayerMap,
   status: Status,
   pairs: Map<string, number>,
-): { partner: PartnerWarning[]; repeat: RepeatWarning[] } {
+): { partner: PartnerWarning[]; repeat: RepeatWarning[]; playing: { id: string; court: string }[] } {
   const partner: PartnerWarning[] = [];
   sel.forEach(id => {
     const pid = P[id]?.partner;
@@ -138,7 +138,8 @@ export function selectionWarnings(
       if (count > 0) repeat.push({ a: sel[i], b: sel[j], count });
     }
   repeat.sort((x, y) => y.count - x.count);
-  return { partner, repeat };
+  const playing = sel.filter(id => status.playing[id]).map(id => ({ id, court: status.playing[id] }));
+  return { partner, repeat, playing };
 }
 
 /** 個人應繳金額：依性別取價，優惠再扣折抵金額（最低 0） */

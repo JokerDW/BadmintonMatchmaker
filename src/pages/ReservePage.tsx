@@ -69,8 +69,12 @@ export function ReservePage() {
         {cards.length === 0 && <p className="empty">尚無預約組合</p>}
         {cards.map(({ r, no }) => {
           const t = makeTeams(r.ids, P);
-          const clash = r.ids.find(id => queued.has(id) || playing[id]);
-          const where = clash ? (playing[clash] ? '在 ' + playing[clash] + ' 比賽中' : '已在預備區') : '';
+          // 已在預備區的人不能再排；正在場上的人可以先排進預備區，只提示
+          const clash = r.ids.find(id => queued.has(id));
+          const onCourt = r.ids.filter(id => playing[id]);
+          const note = clash
+            ? nm(clash) + ' 已在預備區'
+            : onCourt.map(id => nm(id) + ' 在 ' + playing[id] + ' 比賽中').join('、');
           const label = r.status === 'playing' ? '比賽中 · ' + (playing[r.ids[0]] || '') : ST[r.status][0];
           return (
             <div key={r.id} className="card" style={{ gap: 'var(--space-3)', opacity: r.status === 'done' ? 0.55 : 1 }}>
@@ -82,7 +86,7 @@ export function ReservePage() {
               {r.status === 'pending' && (
                 <div className="card-foot">
                   <span style={{ fontSize: 12, color: 'var(--color-accent-700)', fontStyle: 'italic' }}>
-                    {clash ? nm(clash) + ' ' + where : ''}
+                    {note}
                   </span>
                   <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                     <button className="btn btn-ghost" onClick={() => actions.deleteReservation(r.id)}>刪除</button>

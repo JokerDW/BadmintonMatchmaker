@@ -68,12 +68,12 @@ export function PlayersPage() {
             const on = sel.includes(p.id);
             const busy = !!playing[p.id];
             const partner = p.partner && P[p.partner];
-            const meets = busy ? [] : meetWithSel(p.id);
+            const meets = on ? [] : meetWithSel(p.id);
             return (
               <div
                 key={p.id}
-                className={['card', 'player-card', busy ? 'busy' : 'clickable', on && 'selected'].filter(Boolean).join(' ')}
-                onClick={() => { if (!busy) actions.toggleIn('sel', p.id, eligible); }}
+                className={['card', 'player-card', 'clickable', busy && 'busy', on && 'selected'].filter(Boolean).join(' ')}
+                onClick={() => actions.toggleIn('sel', p.id, eligible)}
                 aria-pressed={on}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>

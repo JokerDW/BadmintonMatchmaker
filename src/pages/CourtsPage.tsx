@@ -4,8 +4,11 @@ import { QueueCard } from '../components/QueueCard';
 import { FlagIcon, PlusIcon, TrashIcon } from '../components/Icons';
 
 export function CourtsPage() {
-  const { data, ui, now, nm, actions } = useStore();
+  const { data, ui, now, nm, stillPlaying, actions } = useStore();
   const pickedNo = data.queue.findIndex(q => q.id === ui.pickedQ);
+  const picked = pickedNo >= 0 ? data.queue[pickedNo] : null;
+  const pickedBusy = picked ? stillPlaying([...picked.a, ...picked.b]) : [];
+  const pickedReady = !!picked && pickedBusy.length === 0;
   const freeCourts = data.courts.filter(c => !c.match).length;
 
   return (
@@ -19,7 +22,9 @@ export function CourtsPage() {
           <button className="btn btn-secondary" onClick={actions.addCourt}><PlusIcon />新增場地</button>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-          {pickedNo >= 0
+          {picked && !pickedReady
+            ? `第 ${pad(pickedNo + 1)} 組的 ${pickedBusy.map(nm).join('、')} 還在場上，等他們的比賽結束後才能安排。`
+            : picked
             ? `已選取第 ${pad(pickedNo + 1)} 組，點選任一空場地讓他們上場。`
             : '先在右側預備區點選一組，再點選空場地安排上場；比賽結束後按「結束比賽」讓球員下場。'}
         </p>
@@ -29,7 +34,7 @@ export function CourtsPage() {
           {data.courts.map(c => {
             const m = c.match;
             const free = !m;
-            const canDrop = free && pickedNo >= 0;
+            const canDrop = free && pickedReady;
             return (
               <div
                 key={c.id}

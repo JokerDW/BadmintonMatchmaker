@@ -12,7 +12,8 @@ interface Props {
 }
 
 export function QueueCard({ q, index, mode }: Props) {
-  const { now, P, nm, ui, actions } = useStore();
+  const { now, P, nm, ui, status, stillPlaying, actions } = useStore();
+  const busy = stillPlaying([...q.a, ...q.b]);
   const picked = mode === 'pick' && ui.pickedQ === q.id;
   const levels = q.a.map(id => P[id]?.level).join('+') + ' 對 ' + q.b.map(id => P[id]?.level).join('+');
   const cls = ['card', mode === 'pick' && 'clickable', picked && 'selected'].filter(Boolean).join(' ');
@@ -39,6 +40,11 @@ export function QueueCard({ q, index, mode }: Props) {
       </div>
       <TeamsView teams={q} nm={nm} />
       <div className="card-meta num">程度 {levels}</div>
+      {busy.length > 0 && (
+        <div className="queue-note">
+          {busy.map(id => `${nm(id)} 還在 ${status.playing[id]}`).join('、')}，下場後才能上場
+        </div>
+      )}
     </div>
   );
 }

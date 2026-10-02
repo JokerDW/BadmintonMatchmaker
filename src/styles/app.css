@@ -1,6 +1,11 @@
 /* 版面與共用小元件 */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
-.app-nav { flex-wrap: wrap; padding: var(--space-3) var(--space-6); }
+/* 導覽列固定在頂端，頁面捲動時不動（對話框 z-index 10 會蓋在它上面） */
+.app-nav {
+  flex-wrap: wrap; padding: var(--space-3) var(--space-6);
+  position: sticky; top: 0; z-index: 5;
+  background: var(--color-bg);
+}
 .app-main { flex: 1; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); }
 
 .num { font-variant-numeric: tabular-nums; }
@@ -53,7 +58,10 @@
 .player-card .partner { display: flex; align-items: center; gap: 4px; color: var(--color-neutral-700); min-width: 0; }
 .player-card .partner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-card .games-num { font-family: var(--font-heading); font-size: 18px; font-weight: var(--font-heading-weight); }
-.player-card.busy { opacity: 0.45; cursor: default; }
+/* 正在場上：卡片偏灰，但仍可點選排入預備區 */
+.player-card.busy { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.player-card.busy > * { opacity: 0.55; }
+.player-card.busy.selected > * { opacity: 0.8; }
 .icon-btn { padding: 2px 4px; color: var(--color-neutral-600); }
 
 /* 場地 */
@@ -131,5 +139,6 @@
 .warnings li { display: flex; align-items: flex-start; gap: 6px; }
 .warnings li .svg-icon { margin-top: 3px; color: var(--color-accent-600); }
 .warnings b { font-weight: 600; }
+.queue-note { font-size: 12px; color: var(--color-accent-700); font-style: italic; }
 .res-panel { border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-3); }
 .player-card .meet { font-size: 11px; color: var(--color-accent-700); }

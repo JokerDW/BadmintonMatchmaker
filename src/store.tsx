@@ -44,8 +44,10 @@ function useSchedulerStore() {
   const P: PlayerMap = useMemo(() => toMap(data.players), [data.players]);
   const status: Status = useMemo(() => computeStatus(data), [data]);
   const nm = (id: string) => (P[id] ? P[id].name : '—');
-  /** 可被選入新組合（不在預備區、不在場上） */
-  const eligible = (id: string) => !status.queued.has(id) && !status.playing[id];
+  /** 可被選入新組合：不在預備區即可（正在場上的人也能先排進預備區） */
+  const eligible = (id: string) => !status.queued.has(id);
+  /** 這一組裡還在場上比賽的人 */
+  const stillPlaying = (ids: string[]) => ids.filter(id => status.playing[id]);
 
   const patchUi = (p: Partial<UiState>) => setUi(u => ({ ...u, ...p }));
 
@@ -106,6 +108,9 @@ function useSchedulerStore() {
         const q = d.queue.find(x => x.id === qid);
         const court = d.courts.find(c => c.id === cid);
         if (!q || !court || court.match) return d;
+        // 組內有人還在其他場地比賽，不能上場
+        const onCourt = new Set(d.courts.flatMap(c => (c.match ? [...c.match.a, ...c.match.b] : [])));
+        if ([...q.a, ...q.b].some(id => onCourt.has(id))) return d;
         return {
           ...d,
           queue: d.queue.filter(x => x.id !== qid),
@@ -237,7 +242,7 @@ function useSchedulerStore() {
     },
   };
 
-  return { data, ui, now, P, status, nm, eligible, actions };
+  return { data, ui, now, P, status, nm, eligible, stillPlaying, actions };
 }
 
 export type Store = ReturnType<typeof useSchedulerStore>;
