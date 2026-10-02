@@ -16,6 +16,13 @@
 
 自動分隊規則：四人中若有綁定搭檔則讓他們同隊；否則依程度排序以 1+4 對 2+3 平衡實力。
 
+## PWA
+
+- 可「加到主畫面」安裝，並且**離線可用**（所有頁面、程式與字型都會預先快取）
+- Service Worker 原始碼在 `src/service-worker.ts`，由 `vite-plugin-pwa`（injectManifest）在 build 時注入檔案清單，輸出為 `service-worker.js`
+- 輸出檔名刻意與舊版相同，舊版使用者打開網頁時瀏覽器會直接換成新版，並清除舊快取 `badminton-app-v1`
+- 有新版部署時會自動更新，下次開啟即為新版
+
 ## 開發
 
 需要 Node.js 20.19+ 或 22.12+。
@@ -45,6 +52,7 @@ src/
   App.tsx               分頁切換與對話框
   store.tsx             全域狀態與所有操作（Context + useState，自動存 localStorage）
   types.ts              資料型別
+  service-worker.ts     PWA 離線快取
   lib/
     logic.ts            分隊、狀態計算、批次匯入解析
     storage.ts          localStorage 讀寫與驗證
