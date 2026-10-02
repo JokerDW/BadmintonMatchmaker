@@ -4,6 +4,8 @@ import { parseImport } from '../lib/logic';
 import { isValidData, normalize } from '../lib/storage';
 import { useEscape } from '../lib/useEscape';
 import { XIcon } from './Icons';
+import { Segmented } from './Segmented';
+import { useTheme, type ThemePref } from '../lib/theme';
 
 const IMPORT_PLACEHOLDER = `男
 阿滴 10
@@ -22,6 +24,7 @@ export function SettingsDialog() {
   const [msg, setMsg] = useState('');
   const [confirm, setConfirm] = useState<ConfirmKind>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [theme, setTheme] = useTheme();
 
   const close = () => { setConfirm(null); setMsg(''); actions.closeSettings(); };
   useEscape(open, close);
@@ -65,6 +68,15 @@ export function SettingsDialog() {
           <button className="btn btn-ghost" title="關閉" style={{ padding: '2px 4px' }} onClick={close}>
             <XIcon size={14} />
           </button>
+        </div>
+
+        <div className="settings-row">
+          <div className="desc">
+            <span className="card-kicker">外觀</span>
+            <span>系統：跟隨裝置的深淺色設定</span>
+          </div>
+          <Segmented<ThemePref> name="theme" value={theme} onChange={setTheme}
+            options={[['system', '系統'], ['light', '亮色'], ['dark', '暗色']]} />
         </div>
 
         <div className="settings-block">

@@ -7,10 +7,14 @@ import '@fontsource/cormorant-garamond/600.css';
 import '@fontsource/lora/400.css';
 import '@fontsource/lora/600.css';
 import './styles/classical.css';
+import './styles/theme-dark.css';
 import './styles/app.css';
 
 import { StoreProvider } from './store';
 import App from './App';
+import { disablePinchZoom } from './lib/noZoom';
+
+disablePinchZoom();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

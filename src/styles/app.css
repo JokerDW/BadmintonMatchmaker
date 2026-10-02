@@ -1,4 +1,13 @@
 /* 版面與共用小元件 */
+
+/* 分段選擇器：選中的項目加底色，比只有細框更好辨認 */
+.seg-opt:has(input:checked) {
+  background: var(--color-accent-100); color: var(--color-accent-800); font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+/* 禁止雙擊放大；並避免 iOS 點擊時的灰色閃爍 */
+html { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 /* 導覽列固定在頂端，頁面捲動時不動（對話框 z-index 10 會蓋在它上面） */
 .app-nav {

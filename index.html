@@ -2,13 +2,23 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#f3f2f2" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="羽球排場" />
     <title>羽球排場</title>
+    <script>
+      // 在畫面出來前先套用主題，避免亮暗閃一下（邏輯同 src/lib/theme.ts）
+      (function () {
+        var p = 'system';
+        try { p = localStorage.getItem('badminton-theme') || 'system'; } catch (e) {}
+        var dark = p === 'dark' || (p !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#1c1b1a' : '#f3f2f2');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
